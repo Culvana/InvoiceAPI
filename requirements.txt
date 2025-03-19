@@ -8,7 +8,7 @@ azure-core
 azure-identity
 azure-functions-durable
 azure.storage.blob 
-
+sendgrid
 # OpenAI and environment
 openai
 python-dotenv

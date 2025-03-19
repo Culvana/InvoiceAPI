@@ -35,7 +35,7 @@ async def send_to_gpt(page_data, retries=3):
     for attempt in range(retries):
         try:
             response = await openai_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4o",
                 messages=[
                     {"role": "system", "content": system_message},
                     {"role": "user", "content": prompt + page_data}
@@ -269,6 +269,7 @@ json_template = {
         "Invoice Number": "",
         "Shipping Address": "",
         "Total": 0,
+        "Location":"",
         "List of Items": [
             {
                 "Item Number": "",
@@ -287,7 +288,8 @@ json_template = {
                 "Split Price": "N/A",
                 "Cost of a Unit": 1.0,
                 "Currency": "",
-                "Cost of Each Item":1.0
+                "Cost of Each Item":1.0,
+                "Status": ""
             }
         ]
     }    
@@ -353,6 +355,9 @@ DETAILED INVOICE ANALYSIS INSTRUCTIONS:
         - Must match sum of line items
         - Include tax if listed
         - Round to 2 decimals
+      • Location:
+        - Looking for the reference to location,look for shipping address,Delivered Address
+        - If you have any reference to location then set the location else "N/A"
 
 2. LINE ITEM DETAIL
     Extract the all the items even it has duplicates and
@@ -375,18 +380,70 @@ DETAILED INVOICE ANALYSIS INSTRUCTIONS:
       
       • Product Category
         Classify as:
-        - PRODUCE: Fresh fruits/vegetables
-        - DAIRY: Milk, cheese, yogurt
-        - MEAT: Beef, pork, poultry
-        - SEAFOOD: Fish, shellfish
-        - Beverages: Sodas,juices,water
-        - Dry Grocery: Chips, candy, nuts,Canned goods, spices, sauces
-        - BAKERY: Bread, pastries, cakes
-        - FROZEN: Ice cream, meals, desserts
-        - paper goods and Disposables: Bags, napkins, plates, cups, utensils,packing materials
-        - liquor: Beer, wine, spirits
-        - Chemical: Soaps, detergents, supplies
-        - OTHER: Anything not in above categories
+            1.PRODUCE: Fresh Fruits/Vegetables
+                Examples:
+                Fruits: Apples, Bananas, Oranges
+                Vegetables: Spinach, Carrots, Tomatoes
+                Herbs: Basil, Cilantro
+
+            2.DAIRY: Milk, Cheese, Yogurt
+                Examples:
+                Milk: Whole Milk, Skim Milk
+                Cheese: Cheddar, Mozzarella
+                Yogurt: Greek Yogurt, Regular Yogurt
+
+            3.MEAT: Beef, Pork, Poultry
+                Examples:
+                Beef: Ground Beef, Ribeye Steaks
+                Pork: Bacon, Pork Chops
+                Poultry: Chicken Breasts, Whole Turkeys
+
+            4.SEAFOOD: Fish, Shellfish
+                Examples:
+                Fish: Salmon, Tuna
+                Shellfish: Shrimp, Crab
+
+            5.BEVERAGES: Sodas, Juices, Water
+                Examples:
+                Sodas: Cola, Lemon-Lime
+                Juices: Orange Juice, Apple Juice
+                Water: Bottled Water
+
+            6.DRY GROCERY: Chips, Candy, Nuts, Canned Goods, Spices, Sauces
+                Examples:
+                Snacks: Potato Chips, Candy Bars
+                Nuts: Almonds, Peanuts
+                Canned Goods: Canned Beans, Canned Vegetables
+                Spices & Sauces: Salt, Soy Sauce
+            7.BAKERY: Bread, Pastries, Cakes
+                Examples:
+                Bread: Whole Wheat Bread, Sourdough Baguettes
+                Pastries: Croissants, Muffins
+                Cakes: Chocolate Cake, Cupcakes
+                FROZEN: Ice Cream, Meals, Desserts
+                Ice Cream: Vanilla, Chocolate
+                Meals: Frozen Pizza, TV Dinners
+                Desserts: Sorbet, Frozen Yogurt
+            8.PAPER GOODS AND DISPOSABLES: Bags, Napkins, Plates, Cups, Utensils, Packing Materials
+                Examples:
+                Bags: Grocery Bags, Trash Bags
+                Napkins: Paper Napkins
+                Serveware: Plastic Plates, Cups, Utensils
+                Packing Materials: Bubble Wrap, Cardboard Boxes
+
+            9.LIQUOR: Beer, Wine, Spirits
+                Examples:
+                Beer: Lager, Ale
+                Wine: Red Wine, White Wine
+                Spirits: Vodka, Whiskey
+            10.CHEMICAL: Soaps, Detergents, Supplies
+                Examples:
+                Soaps: Hand Soap, Dish Soap
+                Detergents: Laundry Detergent
+                Supplies: Cleaning Sprays
+            11.OTHER: Anything Not in Above Categories
+
+            Examples: Office Furniture, Tools, Toys, Electronics
 
    B. Quantity and Measurement Details
       • Quantity Shipped
@@ -514,6 +571,8 @@ DETAILED INVOICE ANALYSIS INSTRUCTIONS:
         If Splitable = "NO":
         - Use "N/A"
 
+       • Status
+
 3. VALIDATION RULES
    • Numeric Checks:
      - All quantities must be positive
@@ -532,6 +591,8 @@ DETAILED INVOICE ANALYSIS INSTRUCTIONS:
      - Currency: "USD"
      - Split Price: "N/A"
      - Category: "OTHER"
+
+    
 
 OUTPUT FORMAT:
 Return a JSON array containing each invoice as an object matching this template:

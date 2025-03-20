@@ -4,6 +4,8 @@ import asyncio
 from openai import AsyncOpenAI
 from azure.ai.formrecognizer import DocumentAnalysisClient
 from azure.core.credentials import AzureKeyCredential
+from .excel import process_excel_file, send_to_gpt, merge_or_add_invoice
+
 
 # Initialize clients
 document_analysis_client = DocumentAnalysisClient(
@@ -29,7 +31,7 @@ def parse_json_safely(text):
     except json.JSONDecodeError:
         return None
 
-async def send_to_gpt(page_data, retries=3):
+async def send_to_gpt_async(page_data, retries=3):
     """Send data to GPT with better retry handling"""
     delay = 1
     for attempt in range(retries):
@@ -164,7 +166,7 @@ async def process_large_content(content, chunk_size=14000):
         chunks.append('\n'.join(current_chunk))
     
     # Process chunks concurrently
-    tasks = [send_to_gpt(chunk) for chunk in chunks]
+    tasks = [send_to_gpt_async(chunk) for chunk in chunks]
     return await asyncio.gather(*tasks)
 
 def merge_invoice_items(current, new_items):
@@ -178,9 +180,15 @@ def merge_invoice_items(current, new_items):
     current.extend(new_items)
     return current
 
-async def process_invoice_with_gpt(file_path):
+async def process_invoice_with_gpt(file_path,is_excel):
     """Process invoice with better error handling and efficiency"""
+
     try:
+        if is_excel:
+            # Import and use the Excel processing function
+            from .excel import process_invoice_with_gpt as process_excel
+            return process_excel(file_path)
+
         # Extract document content
         pages = extract_document_content(file_path)
         if not pages:
@@ -215,7 +223,7 @@ async def process_invoice_with_gpt(file_path):
                             current_invoice = result
             else:
                 # Process normal sized content
-                result = await send_to_gpt(page_content)
+                result = await send_to_gpt_async(page_content)
                 if result:
                     if current_invoice:
                         if result.get('Invoice Number') == current_invoice.get('Invoice Number'):

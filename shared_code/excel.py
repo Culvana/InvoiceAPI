@@ -434,36 +434,36 @@ Return a JSON array containing each invoice as an object matching this template:
             max_tokens=16000,
             temperature=1
         )
-        
         content = response.choices[0].message.content
         content = remove_non_printable(content)
         try:
-                # Remove markdown code blocks if present
-                if "json" in content:
-                    content = content.split("json")[1].split("")[0].strip()
-                elif "" in content:
-                    content = content.split("")[1].split("")[0].strip()
-                
+            # Remove markdown code blocks if present - FIXED PART
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+            
+            parsed_data = json.loads(content)
+            return parsed_data
+        except json.JSONDecodeError as e2:
+            logging.warning(f"Second JSON parse attempt failed: {str(e2)}")
+            
+            # Third attempt: Try to extract structured data
+            try:
+                # Extract everything between first { and last }
+                content = content[content.find('{'):content.rfind('}')+1]
                 parsed_data = json.loads(content)
                 return parsed_data
-        except json.JSONDecodeError as e2:
-                logging.warning(f"Second JSON parse attempt failed: {str(e2)}")
-                
-                # Third attempt: Try to extract structured data
-                try:
-                    # Extract everything between first { and last }
-                    content = content[content.find('{'):content.rfind('}')+1]
-                    parsed_data = json.loads(content)
-                    return parsed_data
-                except json.JSONDecodeError as e3:
-                    logging.error(f"All JSON parsing attempts failed. Final error: {str(e3)}")
-                    return None
-                
+            except json.JSONDecodeError as e3:
+                logging.error(f"All JSON parsing attempts failed. Final error: {str(e3)}")
+                return None
+            
     except Exception as e:
         logging.error(f"Error processing with GPT: {str(e)}")
         return None
         
 
+    
 def extract_text_and_tables_from_invoice(file_path):
     """Extract text and tables with improved table structure"""
     try:

@@ -6,7 +6,6 @@ import uuid
 
 @dataclass
 class InvoiceItem:
-    ItemId: str
     Item_Number: str
     Item_Name: str
     Product_Category: str
@@ -24,13 +23,13 @@ class InvoiceItem:
     Cost_of_a_Unit: float
     Cost_of_Each_Item: float
     Currency: str
+    Inventoryitem: bool
     page_number: int = field(default=1)
     item_index: int = field(default=0)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'InvoiceItem':
         return cls(
-            ItemId=str(uuid.uuid4()),
             Item_Number=str(data.get('Item Number', '')),
             Item_Name=str(data.get('Item Name', '')),
             Product_Category=str(data.get('Product Category', '')),
@@ -49,12 +48,12 @@ class InvoiceItem:
             Cost_of_Each_Item=float(data.get('Cost of Each Item', 0.0)),
             Currency=str(data.get('Currency', '')),
             page_number=int(data.get('page_number', 1)),
-            item_index=int(data.get('item_index', 0))
+            item_index=int(data.get('item_index', 0)),
+            Inventoryitem=bool(data.get('Inventoryitem',False))
         )
 
     def to_dict(self) -> Dict[str, Any]:
         base_dict = {
-            'ItemId': self.ItemId,
             'Item Number': self.Item_Number,
             'Item Name': self.Item_Name,
             'Product Category': self.Product_Category,
@@ -73,7 +72,8 @@ class InvoiceItem:
             'Cost of Each Item': self.Cost_of_Each_Item,
             'Currency': self.Currency,
             'page_number': self.page_number,
-            'item_index': self.item_index
+            'item_index': self.item_index,
+            'Inventoryitem': self.Inventoryitem
         }
         return base_dict
 

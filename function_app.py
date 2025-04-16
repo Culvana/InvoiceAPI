@@ -227,12 +227,15 @@ async def process_file_activity(taskinput: Dict[str, Any]) -> List[Dict[str, Any
             # Process file based on its MIME type
             if mime_type.startswith('image/'):
                 logging.info(f"Processing image file: {blob_name}")
-                results = await process_invoice_with_gpt(temp_file_path)
+                results = await process_invoice_with_gpt(temp_file_path,is_excel=False)
             elif mime_type == 'application/pdf':
                 logging.info(f"Processing PDF file: {blob_name}")
-                results = await process_invoice_with_gpt(temp_file_path)
-            elif mime_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-                result=await process_invoice_with_gpt(temp_file_path)    
+                results = await process_invoice_with_gpt(temp_file_path,is_excel=False)
+            elif mime_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' or \
+                 mime_type == 'application/vnd.ms-excel' or \
+                 mime_type == 'text/csv':
+                logging.info(f"Processing Excel/CSV file: {blob_name}")
+                results = await process_invoice_with_gpt(temp_file_path, is_excel=True)       
             else:
                 logging.warning(f"Unsupported file type: {mime_type} for blob: {blob_name}")
                 return []
